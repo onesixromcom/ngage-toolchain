@@ -48,6 +48,12 @@ environment variable:
 `%NGAGESDK%\sdk\sdk\6.1\Shared\EPOC32\gcc\bin`  
 `%NGAGESDK%\sdk\sdk\6.1\Shared\EPOC32\ngagesdk\bin`
 
+## Build latest SDL3
+
+Use script from setup/ports/sdl3.sh
+
+It will build latest libSDL3.a and install it in /usr/local/ngagedev/sdk/extras/lib.
+
 ## Licence and Credits
 
 - This project is licensed under the "The MIT License".  See the file
