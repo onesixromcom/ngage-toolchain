@@ -13,8 +13,8 @@
       "variables": [
         {
           "name": "CMAKE_TOOLCHAIN_FILE",
-          "value": "${env.NGAGESDK}/cmake/ngage-toolchain.cmake",
-          "type": "FILEPATH"
+          "type": "FILEPATH",
+          "value": "${env.NGAGESDK}/cmake/ngage-toolchain.cmake"
         }
       ]
     }
