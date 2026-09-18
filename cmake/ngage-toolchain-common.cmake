@@ -8,6 +8,10 @@ set(CMAKE_SYSTEM_PROCESSOR ARMV4)
 
 set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
 
+# Compiler is working by default.
+set(CMAKE_C_COMPILER_WORKS TRUE)
+set(CMAKE_CXX_COMPILER_WORKS TRUE)
+
 set(CMAKE_IMPORT_LIBRARY_PREFIX "")
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 set(CMAKE_SHARED_MODULE_PREFIX  "")
@@ -29,13 +33,14 @@ endif()
 
 file(TO_CMAKE_PATH "$ENV{NGAGESDK}" NGAGESDK)
 
-set(CMAKE_MODULE_PATH  "${CMAKE_MODULE_PATH};${NGAGESDK}/cmake")
-
 set(SDK_ROOT ${NGAGESDK}/sdk)
 set(S60_SDK_ROOT ${SDK_ROOT}/sdk/6.1)
 set(EPOC_PLATFORM ${S60_SDK_ROOT}/Shared/EPOC32)
 set(EPOC_LIB ${S60_SDK_ROOT}/Series60/Epoc32/Release/armi/urel)
 set(EPOC_EXTRAS ${SDK_ROOT}/extras)
+
+# Fix where cmake files for lib are placed
+set(CMAKE_MODULE_PATH  "${CMAKE_MODULE_PATH};${EPOC_EXTRAS}/lib/cmake")
 
 set(CMAKE_C_COMPILER_LAUNCHER "${CMAKE_CURRENT_LIST_DIR}/ngagecc.bat")
 set(CMAKE_C_LINKER_LAUNCHER "${CMAKE_CURRENT_LIST_DIR}/ngagecc.bat")
@@ -46,10 +51,28 @@ set(CMAKE_OBJCOPY "${EPOC_PLATFORM}/gcc/bin/objcopy")
 set(CMAKE_OBJDUMP "${EPOC_PLATFORM}/gcc/bin/objdump")
 
 set(CMAKE_RANLIB "${EPOC_PLATFORM}/gcc/bin/ranlib.exe")
-set(CMAKE_AR "${EPOC_PLATFORM}/gcc/bin/ar.exe")
+#set(CMAKE_AR "${EPOC_PLATFORM}/gcc/bin/ar.exe")
+
+if(UNIX)
+  set(CMAKE_C_COMPILER_LAUNCHER "${CMAKE_CURRENT_LIST_DIR}/ngagecc")
+  set(CMAKE_C_LINKER_LAUNCHER "${CMAKE_CURRENT_LIST_DIR}/ngagecc")
+  set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_CURRENT_LIST_DIR}/ngagecc")
+  set(CMAKE_CXX_LINKER_LAUNCHER "${CMAKE_CURRENT_LIST_DIR}/ngagecc")
+
+  set(CMAKE_C_COMPILER "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-gcc")
+  set(CMAKE_C_LINKER "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-gcc")
+  set(CMAKE_CXX_COMPILER "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-cpp")
+  set(CMAKE_CXX_LINKER "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-cpp")
+
+  set(CMAKE_OBJCOPY "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-objcopy")
+  set(CMAKE_OBJDUMP "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-objdump")
+
+  set(CMAKE_RANLIB "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-ranlib")
+endif()
 
 set(NGAGE_CPPFLAGS "-DFUNCTION_NAME=__FUNCTION__ -D__NGAGE__=1 -D__SYMBIAN32__ -D__GCC32__ -D__EPOC32__ -D__MARM__ -D__MARM_ARMI__ -D_UNICODE")
-set(NGAGE_CPPFLAGS "${NGAGE_CPPFLAGS} -I ${EPOC_PLATFORM}/include -I ${EPOC_EXTRAS}/include -I ${S60_SDK_ROOT}/Series60/Epoc32/Include -I ${S60_SDK_ROOT}/Series60/Epoc32/Include/libc -I ${S60_SDK_ROOT}/Shared/EPOC32/ngagesdk/include")
+set(NGAGE_CPPFLAGS "${NGAGE_CPPFLAGS} -I ${EPOC_PLATFORM}/include -I ${EPOC_EXTRAS}/include -I ${S60_SDK_ROOT}/Series60/Epoc32/Include -I ${S60_SDK_ROOT}/Series60/Epoc32/Include/libc -I ${S60_SDK_ROOT}/Shared/EPOC32/ngagesdk/include" )
+
 set(NGAGE_CPPFLAGS "${NGAGE_CPPFLAGS} -s -fomit-frame-pointer -O2 -mthumb-interwork -pipe -nostdinc -mstructure-size-boundary=8")
 
 set(NGAGE_CFLAGS "${NGAGE_CPPFLAGS} -fno-leading-underscore")
@@ -60,15 +83,20 @@ set(CMAKE_CXX_FLAGS_INIT "${NGAGE_CXXFLAGS}")
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "")#-Wl,-e,_E32Startup -Wl,-u,_E32Startup")
 
+if(UNIX)
+  set(CMAKE_EXE_LINKER_FLAGS_INIT "-s MAIN_COMPAT=0 -nostartfiles -nodefaultlibs")
+endif()
+
 set(CMAKE_C_STANDARD_LIBRARIES "${EPOC_LIB}/eexe.lib")
 set(CMAKE_CXX_STANDARD_LIBRARIES "${EPOC_LIB}/eexe.lib")
 
-if (NGAGE_LEGACY)
+if(NGAGE_LEGACY)
   set(CMAKE_C_COMPILER_ID_RUN TRUE)
   set(CMAKE_C_COMPILER_FORCED TRUE)
   set(CMAKE_C_COMPILER_WORKS TRUE)
 endif()
 
+set(CMAKE_C_COMPILER_WORKS TRUE)
 set(CMAKE_CXX_COMPILER_ID_RUN TRUE)
 set(CMAKE_CXX_COMPILER_FORCED TRUE)
 set(CMAKE_CXX_COMPILER_WORKS TRUE)
@@ -84,7 +112,6 @@ ngagesdk_add_static_imported_library(NRenderer "${EPOC_LIB}/NRenderer.lib")
 ngagesdk_add_static_imported_library(3dtypes "${EPOC_LIB}/3dtypes.a")
 ngagesdk_add_static_imported_library(cone "${EPOC_LIB}/cone.lib")
 ngagesdk_add_static_imported_library(libgcc "${EPOC_PLATFORM}/gcc/lib/gcc-lib/arm-epoc-pe/2.9-psion-98r2/libgcc.a")
-ngagesdk_add_static_imported_library(libgcc_ngage "${EPOC_PLATFORM}/ngagesdk/lib/gcc/arm-epoc-pe/4.6.4/libgcc_ngage.a")
 ngagesdk_add_static_imported_library(mediaclientaudiostream "${EPOC_LIB}/mediaclientaudiostream.lib")
 ngagesdk_add_static_imported_library(charconv "${EPOC_LIB}/charconv.lib")
 ngagesdk_add_static_imported_library(bitgdi "${EPOC_LIB}/bitgdi.lib")
@@ -97,69 +124,96 @@ ngagesdk_add_static_imported_library(efsrv "${EPOC_LIB}/efsrv.lib")
 ngagesdk_add_static_imported_library(scdv "${EPOC_LIB}/scdv.lib")
 ngagesdk_add_static_imported_library(gdi "${EPOC_LIB}/gdi.lib")
 
+
+# TODO: change to one location.
+if(WIN32)
+  ngagesdk_add_static_imported_library(libgcc_ngage "${EPOC_PLATFORM}/ngagesdk/lib/gcc/arm-epoc-pe/4.6.4/libgcc_ngage.a")
+  ngagesdk_add_static_imported_library(SDL3 "${EPOC_EXTRAS}/lib/SDL3-static.lib")
+  ngagesdk_add_static_imported_library(SDL3_mixer "${EPOC_EXTRAS}/lib/SDL3_mixer-static.lib")
+elseif(UNIX)
+  ngagesdk_add_static_imported_library(libgcc_ngage "${EPOC_PLATFORM}/ngagesdk/lib/libgcc_ngage.a")
+  ngagesdk_add_static_imported_library(SDL3 "${EPOC_EXTRAS}/lib/libSDL3.a")
+  ngagesdk_add_static_imported_library(SDL3_mixer "${EPOC_EXTRAS}/lib/libSDL3_mixer.a")
+endif()
+
 cmake_policy(SET CMP0053 NEW)  # Ensures proper argument parsing.
+
+if(WIN32)
+  SET(GCC_DLLTOOL "${EPOC_PLATFORM}/gcc/bin/dlltool")
+  SET(GCC_LD "${EPOC_PLATFORM}/gcc/bin/ld")
+  SET(GCC_CPP "${EPOC_PLATFORM}/gcc/bin/cpp")
+elseif(UNIX)
+  SET(GCC_DLLTOOL "${EPOC_PLATFORM}/gcc/arm-epoc-pe/bin/dlltool")
+  SET(GCC_LD "${EPOC_PLATFORM}/gcc/arm-epoc-pe/bin/ld")
+  SET(GCC_CPP "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-cpp")
+
+  # Fix incorrect "as" program selector.
+  set(FORCE_AS --as "${EPOC_PLATFORM}/gcc/bin/arm-epoc-pe-as")
+endif()
 
 # FIXME: build_dll is not implemented by ngagecc.py
 
 function(build_dll LIB FILENAME EXTENSION UID1 UID2 UID3 LIBS)
-  # Create new DefFile from in library
-  add_custom_target(${FILENAME}.def ALL
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LIB}.lib
-    COMMAND ${EPOC_PLATFORM}/gcc/bin/dlltool -m arm_interwork --output-def ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.def ${CMAKE_CURRENT_BINARY_DIR}/${LIB}.lib
-  )
+  set(bin ${CMAKE_CURRENT_BINARY_DIR})
 
-  build_dll_ex("${LIB}" "${FILENAME}" "${EXTENSION}" "${UID1}" "${UID2}" "${UID3}" "${LIBS}" "${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.def")
+  # Create new DefFile from in library
+  add_custom_command(
+    OUTPUT ${bin}/${FILENAME}.def
+    DEPENDS ${bin}/${LIB}.lib
+    COMMAND ${GCC_DLLTOOL} -m arm_interwork --output-def ${bin}/${FILENAME}.def ${bin}/${LIB}.lib)
+
+  build_dll_ex("${LIB}" "${FILENAME}" "${EXTENSION}" "${UID1}" "${UID2}" "${UID3}" "${LIBS}" "${bin}/${FILENAME}.def")
 endfunction()
 
 function(build_dll_ex LIB FILENAME EXTENSION UID1 UID2 UID3 LIBS def_file)
-  # Create new Export file from generated DefFle
-  add_custom_target(${FILENAME}_tmp.exp ALL
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.def
-    COMMAND ${EPOC_PLATFORM}/gcc/bin/dlltool -m arm_interwork --def ${def_file}
-      --output-exp ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}_tmp.exp --dllname ${FILENAME}[${UID3}].${EXTENSION}
-  )
+  set(bin ${CMAKE_CURRENT_BINARY_DIR})
 
-  # Create new Base file
-  add_custom_target(${FILENAME}.bas ALL
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}_tmp.exp
-    COMMAND ${EPOC_PLATFORM}/gcc/bin/ld -s -e _E32Dll -u _E32Dll ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}_tmp.exp --dll
-        --base-file ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.bas -o ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}_tmp.${EXTENSION}
-        ${EPOC_LIB}/edll.lib --whole-archive ${CMAKE_CURRENT_BINARY_DIR}/${LIB}.lib --no-whole-archive ${LIBS}
-  )
+  add_custom_command(
+    OUTPUT ${bin}/${FILENAME}_tmp.exp
+    DEPENDS ${def_file}
+    COMMAND ${GCC_DLLTOOL} -m arm_interwork --def ${def_file} ${FORCE_AS}
+      --output-exp ${bin}/${FILENAME}_tmp.exp --dllname ${FILENAME}[${UID3}].${EXTENSION})
 
-  # Create new EXPORT file with def a
-  add_custom_target(${FILENAME}.exp ALL
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.bas
-    COMMAND ${EPOC_PLATFORM}/gcc/bin/dlltool -m arm_interwork --def ${def_file} --dllname ${FILENAME}[${UID3}].${EXTENSION}
-          --base-file ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.bas --output-exp ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.exp
-  )
+  add_custom_command(
+    OUTPUT ${bin}/${FILENAME}.bas ${bin}/${FILENAME}_tmp.${EXTENSION}
+    DEPENDS ${bin}/${FILENAME}_tmp.exp
+    COMMAND ${GCC_LD} -s -e _E32Dll -u _E32Dll ${bin}/${FILENAME}_tmp.exp --dll
+        --base-file ${bin}/${FILENAME}.bas -o ${bin}/${FILENAME}_tmp.${EXTENSION}
+        ${EPOC_LIB}/edll.lib --whole-archive ${bin}/${LIB}.lib --no-whole-archive ${LIBS})
 
-  # Create new interface LIB file with def a
-  add_custom_target(${FILENAME}_tmp.lib ALL
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.exp
-    COMMAND ${EPOC_PLATFORM}/gcc/bin/dlltool -m arm_interwork --def ${def_file} --dllname ${FILENAME}[${UID3}].${EXTENSION}
-          --base-file ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.bas --output-lib ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}_tmp.lib
-  )
+  add_custom_command(
+    OUTPUT ${bin}/${FILENAME}.exp
+    DEPENDS ${bin}/${FILENAME}.bas
+    COMMAND ${GCC_DLLTOOL} -m arm_interwork --def ${def_file} ${FORCE_AS} --dllname ${FILENAME}[${UID3}].${EXTENSION}
+          --base-file ${bin}/${FILENAME}.bas --output-exp ${bin}/${FILENAME}.exp)
 
-  add_custom_target(${FILENAME}.map ALL
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}_tmp.lib
-    COMMAND ${EPOC_PLATFORM}/gcc/bin/ld -s -e _E32Dll -u _E32Dll --dll ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.exp
-          -Map ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.map -o ${FILENAME}_tmp.${EXTENSION} ${EPOC_LIB}/edll.lib
-          --whole-archive ${CMAKE_CURRENT_BINARY_DIR}/${LIB}.lib --no-whole-archive ${LIBS}
-  )
+  add_custom_command(
+    OUTPUT ${bin}/${FILENAME}_tmp.lib
+    DEPENDS ${bin}/${FILENAME}.exp
+    COMMAND ${GCC_DLLTOOL} -m arm_interwork --def ${def_file} ${FORCE_AS} --dllname ${FILENAME}[${UID3}].${EXTENSION}
+          --base-file ${bin}/${FILENAME}.bas --output-lib ${bin}/${FILENAME}_tmp.lib)
 
-  add_custom_target(${FILENAME}.${EXTENSION} ALL
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.map
-    COMMAND ${EPOC_PLATFORM}/Tools/petran ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}_tmp.${EXTENSION}
-          ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}.${EXTENSION} -nocall -uid1 ${UID1} -uid2 ${UID2} -uid3 ${UID3}
-  )
+  add_custom_command(
+    OUTPUT ${bin}/${FILENAME}.map
+    DEPENDS ${bin}/${FILENAME}_tmp.lib
+    COMMAND ${GCC_LD} -s -e _E32Dll -u _E32Dll --dll ${bin}/${FILENAME}.exp
+          -Map ${bin}/${FILENAME}.map -o ${FILENAME}_tmp.${EXTENSION} ${EPOC_LIB}/edll.lib
+          --whole-archive ${bin}/${LIB}.lib --no-whole-archive ${LIBS})
+
+  add_custom_command(
+    OUTPUT ${bin}/${FILENAME}.${EXTENSION}
+    DEPENDS ${bin}/${FILENAME}.map
+    COMMAND ${EPOC_PLATFORM}/Tools/petran ${bin}/${FILENAME}_tmp.${EXTENSION}
+          ${bin}/${FILENAME}.${EXTENSION} -nocall -uid1 ${UID1} -uid2 ${UID2} -uid3 ${UID3})
+
+  add_custom_target(${FILENAME}_${EXTENSION}_target ALL
+    DEPENDS ${bin}/${FILENAME}.${EXTENSION})
 endfunction()
 
 function(pack_assets resource_dir resources)
   add_custom_target(data.pfs ALL
     WORKING_DIRECTORY ${resource_dir}
-    COMMAND ${NGAGESDK}/sdk/tools/packer ${resources}
-  )
+    COMMAND ${NGAGESDK}/sdk/tools/packer ${resources})
 endfunction()
 
 function(copy_file_ex main_dep source_dir dest_dir src_file dst_file)
@@ -194,22 +248,19 @@ function(install_file main_dep project_name source_dir file drive_letter)
 endfunction()
 
 function(build_resource source_dir basename extra_args)
-  add_custom_target(
-    ${basename}.RSS_Intermediate
-    ALL
-    DEPENDS
-    ${source_dir}/${basename}.rss
-    COMMAND
-    ${EPOC_PLATFORM}/gcc/bin/cpp ${extra_args} -I${S60_SDK_ROOT}/Series60/Epoc32/Include -I${source_dir} -I${source_dir}/../inc ${source_dir}/${basename}.rss ${CMAKE_CURRENT_BINARY_DIR}/${basename}.RSS_Intermediate)
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${basename}.RSS_Intermediate
+    COMMAND ${GCC_CPP} ${extra_args} -I${S60_SDK_ROOT}/Series60/Epoc32/Include 
+	          -I${source_dir} -I${source_dir}/../inc ${source_dir}/${basename}.rss ${CMAKE_CURRENT_BINARY_DIR}/${basename}.RSS_Intermediate)
 
   add_custom_target(
     ${basename}.rsc
     ALL
-    DEPENDS
-    ${CMAKE_CURRENT_BINARY_DIR}/${basename}.RSS_Intermediate
-    COMMAND
-    ${EPOC_PLATFORM}/Tools/rcomp -u -s${CMAKE_CURRENT_BINARY_DIR}/${basename}.RSS_Intermediate -h${CMAKE_CURRENT_BINARY_DIR}/${basename}.rsg -o${CMAKE_CURRENT_BINARY_DIR}/${basename}.rsc)
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${basename}.RSS_Intermediate
+    COMMAND ${EPOC_PLATFORM}/Tools/rcomp -u -s${CMAKE_CURRENT_BINARY_DIR}/${basename}.RSS_Intermediate 
+	          -h${CMAKE_CURRENT_BINARY_DIR}/${basename}.rsg -o${CMAKE_CURRENT_BINARY_DIR}/${basename}.rsc)
 endfunction()
+
 
 function(build_aif source_dir basename UID3)
   add_custom_target(
@@ -220,17 +271,17 @@ function(build_aif source_dir basename UID3)
     WORKING_DIRECTORY
     ${source_dir}
     COMMAND
-    ${NGAGESDK}/sdk/tools/genaif -u ${UID3} ${source_dir}/${basename}.aifspec ${CMAKE_CURRENT_BINARY_DIR}/${basename}.aif)
+    ${NGAGESDK}/sdk/tools/genaif -u ${UID3} ${basename}.aifspec ${CMAKE_CURRENT_BINARY_DIR}/${basename}.aif)
 endfunction()
 
-function(build_sis source_dir basename)
+function(build_sis source_dir basename outputname)
   add_custom_target(
     ${basename}.sis
     ALL
     DEPENDS
     ${source_dir}/${basename}.pkg
-    WORKING_DIRECTORY
+    WORKING_DIRECTORY 
     ${source_dir}
     COMMAND
-    ${EPOC_PLATFORM}/Tools/makesis ${source_dir}/${basename}.pkg ${CMAKE_CURRENT_BINARY_DIR}/${basename}.sis)
+    ${EPOC_PLATFORM}/Tools/makesis ${basename}.pkg ${CMAKE_CURRENT_BINARY_DIR}/${outputname}.sis)
 endfunction()
