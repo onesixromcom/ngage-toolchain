@@ -51,8 +51,14 @@ endif()
 
 # file log enabled by default. TODO: fix debug builds.
 set(NGAGE_CPPFLAGS "-DFUNCTION_NAME=__FUNCTION__ -D__NGAGE__=1 -D__SYMBIAN32__ -D__GCC32__ -D__EPOC32__  -D__MARM__ -D__MARM_ARMI__ -D_UNICODE -DENABLE_FILE_LOG" )
+
 # Use file log for Debug build.
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(NOT CMAKE_BUILD_TYPE_ORIGINAL)
+	set(CMAKE_BUILD_TYPE_ORIGINAL ${CMAKE_BUILD_TYPE})
+	set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+if(CMAKE_BUILD_TYPE_ORIGINAL STREQUAL "Debug")
 	set(NGAGE_CPPFLAGS "${NGAGE_CPPFLAGS} -DENABLE_FILE_LOG")
 endif()
 
@@ -93,3 +99,5 @@ set(CMAKE_CXX_COMPILER_WORKS TRUE)
 set(EPOC32_BIN
     "/usr/local/ngagedev/sdk/6.1/Shared/EPOC32/gcc/arm-epoc-pe/bin"
 )
+
+set(CMAKE_PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/sdl3-output-name-hook.cmake")
