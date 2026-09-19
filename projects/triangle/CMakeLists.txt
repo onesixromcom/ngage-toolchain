@@ -25,6 +25,7 @@ set(GCC_DEFS      ${GCC_COMN_DEFS} ${GCC_MODE_DEFS})
 set_property(TARGET triangle PROPERTY C_STANDARD 99)
 
 target_link_libraries(triangle PRIVATE
+  SDL3
   NRenderer
   3dtypes
   # cone
@@ -41,7 +42,6 @@ target_link_libraries(triangle PRIVATE
   efsrv
   # scdv
   gdi
-  SDL3
 )
 
 target_compile_definitions(
